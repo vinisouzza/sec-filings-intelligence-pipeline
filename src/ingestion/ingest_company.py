@@ -1,33 +1,53 @@
 import json
-
 from pathlib import Path
+from datetime import datetime, UTC
+from typing import Optional
 
 from ingestion.sec_client import SECClient
-
 from utils.logger import get_logger
 
-from datetime import datetime, UTC
 
 logger = get_logger()
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-def ingest_company(cik: str) -> None:
-    """Ingest the company data for a given CIK."""
 
-    client = SECClient()
+def ingest_company(cik: str, client: Optional[SECClient] = None) -> Path:
+    """
+    Ingest the SEC submissions data for a given CIK and save it locally.
+    
+    Parameters
+    ----------
+    cik : str
+        Company CIK.
+    client : Optional[SECClient]
+        Reusable SEC client instance. If None, a new one is created.
+    
+    Returns
+    -------
+    Path
+        Path to the saved JSON file.
+    """
+    
+    if client is None:
+        client = SECClient()
 
-    data = client.get_submissions(cik)
+    cik_str = str(cik).strip().zfill(10)
+    ingestion_date = datetime.now(UTC).date().isoformat()
+
+    logger.info(f"Starting ingestion for CIK={cik_str}")
+
+    data = client.get_submissions(cik_str)
 
     folder = (
-        Path("data/raw/sec")
-        / f"ingestion_date={datetime.now(UTC).date().isoformat()}"
-        / f"cik={str(cik).zfill(10)}"
+        PROJECT_ROOT
+        / "data"
+        / "raw"
+        / "sec"
+        / f"ingestion_date={ingestion_date}"
+        / f"cik={cik_str}"
     )
-
-    folder.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    folder.mkdir(parents=True, exist_ok=True)
 
     output_file = folder / "submissions.json"
 
@@ -45,22 +65,8 @@ def ingest_company(cik: str) -> None:
         )
 
     
-    last_run_file = Path("data/state/last_run.json")
-    with open(
-        last_run_file,
-        "w",
-        encoding="utf-8"
-    ) as f:
-    
-        json.dump(
-            {
-                "last_run": str(datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"))
-            },
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
-    
     logger.info(
         f"File saved: {output_file}"
     )
+
+    return output_file
