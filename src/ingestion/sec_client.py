@@ -1,45 +1,75 @@
-import requests
+from __future__ import annotations
 
-from tenacity import retry, stop_after_attempt, wait_exponential
+from dataclasses import dataclass
+from typing import Any
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from utils.config import settings
 
 
+@dataclass
 class SECClient:
-    """Client for interacting with the SEC EDGAR API."""
+    session: requests.Session
+    timeout: int
 
-    def __init__(self):
+    def __init__(
+        self,
+        user_agent: str | None = None,
+        timeout: int | None = None,
+        max_retries: int | None = None,
+    ) -> None:
         self.session = requests.Session()
+        self.timeout = timeout or settings.REQUEST_TIMEOUT
 
-        self.session.headers.update({
-            "User-Agent": settings.SEC_USER_AGENT
-        })
-
-    @retry(
-        stop=stop_after_attempt(settings.MAX_RETRIES),
-        wait=wait_exponential(multiplier=1)
-    )
-    
-    def get_json(self, url: str) -> dict:
-        """Make a GET request to the specified URL and return the JSON response."""
-
-        response = self.session.get(
-            url,
-            timeout=settings.REQUEST_TIMEOUT
+        retries = Retry(
+            total=max_retries or settings.MAX_RETRIES,
+            connect=max_retries or settings.MAX_RETRIES,
+            read=max_retries or settings.MAX_RETRIES,
+            status=max_retries or settings.MAX_RETRIES,
+            backoff_factor=1.0,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset({"GET"}),
+            raise_on_status=False,
         )
 
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
+        self.session.headers.update(
+            {
+                "User-Agent": user_agent or settings.SEC_USER_AGENT,
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "keep-alive",
+            }
+        )
+
+    @staticmethod
+    def _normalize_cik(cik: str) -> str:
+        cik_str = str(cik).strip()
+        if not cik_str.isdigit():
+            raise ValueError(f"Invalid CIK: {cik!r}")
+        return cik_str.zfill(10)
+
+    def get_json(self, url: str) -> dict[str, Any]:
+        response = self.session.get(url, timeout=self.timeout)
         response.raise_for_status()
 
-        return response.json()
-    
-    def get_submissions(self, cik: str) -> dict:
-        """Get the submissions for a given CIK."""
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise ValueError(f"Response from SEC is not valid JSON: {url}") from exc
 
-        cik = str(cik).zfill(10)
+    def get_submissions(self, cik: str) -> dict[str, Any]:
+        cik_padded = self._normalize_cik(cik)
+        url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
+        return self.get_json(url)
 
-        url = (
-            f"https://data.sec.gov/submissions/"
-            f"CIK{cik}.json"
-        )
-
+    def get_companyfacts(self, cik: str) -> dict[str, Any]:
+        cik_padded = self._normalize_cik(cik)
+        url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik_padded}.json"
         return self.get_json(url)
