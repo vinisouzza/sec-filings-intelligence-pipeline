@@ -1,0 +1,59 @@
+version: 2
+
+sources:
+  - name: silver
+    description: "Logical Silver layer exported as Parquet files under data/silver."
+    tables:
+      - name: silver_companies
+        description: "Deduplicated company snapshots from the Silver layer."
+        columns:
+          - name: cik
+            description: "SEC CIK identifier for the company."
+          - name: company_name
+            description: "Company legal name."
+          - name: ticker
+            description: "Primary ticker symbol."
+          - name: exchange
+            description: "Primary exchange."
+          - name: sic
+            description: "Standard Industrial Classification code."
+          - name: sic_description
+            description: "SIC textual description."
+          - name: state_of_incorporation
+            description: "State of incorporation."
+          - name: category
+            description: "Filing category."
+          - name: latest_ingestion_date
+            description: "Latest ingestion date included in the Silver snapshot."
+          - name: source_file
+            description: "Raw source file that produced the Silver row."
+
+      - name: silver_filings
+        description: "Cleaned filings extracted from the Silver layer."
+        columns:
+          - name: cik
+            description: "SEC CIK identifier for the company."
+          - name: accession_number
+            description: "SEC accession number for the filing."
+          - name: filing_date
+            description: "Filing date."
+          - name: report_date
+            description: "Report date."
+          - name: acceptance_datetime
+            description: "Acceptance timestamp."
+          - name: form
+            description: "SEC form type."
+          - name: file_number
+            description: "SEC file number."
+          - name: size
+            description: "Filing size."
+          - name: is_xbrl
+            description: "Whether the filing is XBRL."
+          - name: is_inline_xbrl
+            description: "Whether the filing is Inline XBRL."
+          - name: primary_document
+            description: "Primary document filename."
+          - name: ingestion_date
+            description: "Ingestion date of the Silver record."
+          - name: source_file
+            description: "Raw source file that produced the Silver row."

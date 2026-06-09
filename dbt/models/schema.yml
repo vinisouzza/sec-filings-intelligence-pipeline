@@ -1,0 +1,112 @@
+version: 2
+
+models:
+  - name: stg_companies
+    description: >
+      Staging model for SEC company snapshots coming from the Silver layer.
+      This model standardizes the company grain to one row per company snapshot
+      and prepares the data for downstream marts.
+
+    columns:
+      - name: cik
+        description: "SEC Central Index Key identifying the company."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: company_name
+        description: "Company legal name as provided by the SEC."
+        data_tests:
+          - not_null
+
+      - name: ticker
+        description: "Primary ticker symbol, when available."
+
+      - name: exchange
+        description: "Primary exchange associated with the ticker, when available."
+
+      - name: sic
+        description: "Standard Industrial Classification code."
+
+      - name: sic_description
+        description: "Human-readable SIC description."
+
+      - name: state_of_incorporation
+        description: "State of incorporation."
+
+      - name: category
+        description: "SEC filer category."
+
+      - name: latest_ingestion_date
+        description: "Most recent ingestion date present in the Silver snapshot."
+        data_tests:
+          - not_null
+
+      - name: source_file
+        description: "Source Silver file that generated this staged row."
+        data_tests:
+          - not_null
+
+  - name: stg_filings
+    description: >
+      Staging model for SEC filings coming from the Silver layer.
+      This model standardizes filing-level records and keeps one row per filing.
+
+    columns:
+      - name: cik
+        description: "SEC Central Index Key identifying the company."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_companies')
+                field: cik
+
+      - name: accession_number
+        description: "SEC accession number for the filing."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: filing_date
+        description: "Date when the filing was submitted."
+        data_tests:
+          - not_null
+
+      - name: report_date
+        description: "Date the filing refers to, when available."
+
+      - name: acceptance_datetime
+        description: "Timestamp when the filing was accepted by the SEC."
+
+      - name: form
+        description: "SEC filing form type (10-K, 10-Q, 8-K, DEF 14A, etc.)."
+        data_tests:
+          - not_null
+
+      - name: file_number
+        description: "SEC file number, when available."
+
+      - name: size
+        description: "Filing size in bytes, when available."
+
+      - name: is_xbrl
+        description: "Whether the filing contains XBRL data."
+
+      - name: is_inline_xbrl
+        description: "Whether the filing contains Inline XBRL."
+
+      - name: primary_document
+        description: "Primary filing document filename."
+        data_tests:
+          - not_null
+
+      - name: ingestion_date
+        description: "Date when the filing was ingested."
+        data_tests:
+          - not_null
+
+      - name: source_file
+        description: "Source Silver file that generated this staged row."
+        data_tests:
+          - not_null

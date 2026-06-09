@@ -17,3 +17,6 @@ data/
 venv/
 # Packaging
 *.egg-info/
+# DBT
+target/
+dbt_packages/

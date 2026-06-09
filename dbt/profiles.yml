@@ -1,0 +1,11 @@
+sec_filings_intelligence_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/warehouse/sec_filings.duckdb
+      threads: 4
+      schema: analytics
+      extensions:
+        - parquet
+        - json
