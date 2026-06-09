@@ -20,3 +20,4 @@ venv/
 # DBT
 target/
 dbt_packages/
+.user.yml
