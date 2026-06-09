@@ -110,3 +110,28 @@ models:
         description: "Source Silver file that generated this staged row."
         data_tests:
           - not_null
+  
+  - name: gold_companies_latest
+    description: "Latest company dimension."
+
+    columns:
+      - name: cik
+        data_tests:
+          - unique
+          - not_null
+
+  - name: gold_filings_summary
+    description: "Aggregated filing metrics per company."
+
+    columns:
+      - name: cik
+        data_tests:
+          - unique
+          - not_null
+
+      - name: total_filings
+        data_tests:
+          - not_null
+
+  - name: gold_sic_summary
+    description: "Aggregated metrics by SIC industry."
