@@ -4,20 +4,19 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
-
   workflow_dispatch:
 
 jobs:
   test-and-validate:
     name: Python Tests and dbt Validation
-
     runs-on: ubuntu-latest
-
     timeout-minutes: 15
+
+    env:
+      SEC_USER_AGENT: "sec-filings-intelligence-pipeline GitHub Actions (contact: your-email@example.com)"
 
     steps:
       - name: Checkout repository
@@ -37,13 +36,12 @@ jobs:
 
       - name: Verify package installation
         run: |
+          python -c "import ingestion"
           python -c "import bronze"
           python -c "import silver"
-          python -c "import ingestion"
 
       - name: Run Pytest
-        run: |
-          pytest -v
+        run: pytest -v
 
       - name: Validate dbt project
         run: |

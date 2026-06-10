@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any
 
@@ -7,7 +5,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from utils.config import settings
+from utils.config import get_settings
 
 
 @dataclass
@@ -21,6 +19,15 @@ class SECClient:
         timeout: int | None = None,
         max_retries: int | None = None,
     ) -> None:
+        settings = get_settings()
+
+        resolved_user_agent = user_agent or settings.SEC_USER_AGENT
+        if not resolved_user_agent:
+            raise ValueError(
+                "SEC_USER_AGENT is required. Set it in .env, environment variables, "
+                "or pass it explicitly to SECClient."
+            )
+
         self.session = requests.Session()
         self.timeout = timeout or settings.REQUEST_TIMEOUT
 
@@ -41,7 +48,7 @@ class SECClient:
 
         self.session.headers.update(
             {
-                "User-Agent": user_agent or settings.SEC_USER_AGENT,
+                "User-Agent": resolved_user_agent,
                 "Accept": "application/json",
                 "Accept-Encoding": "gzip, deflate",
                 "Connection": "keep-alive",
