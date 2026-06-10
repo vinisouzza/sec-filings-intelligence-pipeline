@@ -2,6 +2,9 @@ import pandas as pd
 
 from silver import build_silver as bs
 
+import pytest
+
+pytestmark = pytest.mark.integration
 
 def test_build_silver_tables():
     companies_df, filings_df = bs.build_silver_tables()

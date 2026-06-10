@@ -2,6 +2,9 @@ from pathlib import Path
 
 import duckdb
 
+import pytest
+
+pytestmark = pytest.mark.integration
 
 def test_silver_parquet_files_exist():
     companies_path = Path("data/silver/silver_companies.parquet")

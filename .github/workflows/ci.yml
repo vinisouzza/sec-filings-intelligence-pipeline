@@ -41,7 +41,7 @@ jobs:
           python -c "import silver"
 
       - name: Run Pytest
-        run: pytest -v
+        run: pytest -v -m "not integration"
 
       - name: Validate dbt project
         run: |
