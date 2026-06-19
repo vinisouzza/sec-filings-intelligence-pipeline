@@ -43,6 +43,12 @@ jobs:
       - name: Run Pytest
         run: pytest -v -m "not integration"
 
+      - name: Install dbt packages
+        run: |
+          dbt deps \
+            --project-dir dbt \
+            --profiles-dir dbt
+
       - name: Validate dbt project
         run: |
           dbt parse \
