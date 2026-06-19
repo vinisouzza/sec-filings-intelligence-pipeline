@@ -1,4 +1,7 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    unique_key='accession_number'
+) }}
 
 select
     cik,
@@ -8,6 +11,13 @@ select
     form,
     primary_document
 from {{ ref('stg_filings') }}
-order by
-    filing_date desc,
-    accession_number desc
+
+{% if is_incremental() %}
+
+where filing_date >
+(
+    select max(filing_date)
+    from {{ this }}
+)
+
+{% endif %}

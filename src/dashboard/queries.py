@@ -145,3 +145,13 @@ def load_sic_summary() -> pd.DataFrame:
     """
     with _get_connection() as con:
         return con.execute(query).df()
+    
+def load_pipeline_metrics() -> pd.DataFrame:
+    query = """
+    SELECT *
+    FROM analytics.gold_pipeline_metrics
+    ORDER BY execution_timestamp DESC
+    """
+
+    with _get_connection() as con:
+        return con.execute(query).df()

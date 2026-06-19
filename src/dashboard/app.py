@@ -10,6 +10,7 @@ from dashboard.queries import (
     load_filings_by_form,
     load_filings_timeline,
     load_kpis,
+    load_pipeline_metrics,
     load_recent_filings,
     load_sic_summary,
     load_top_companies,
@@ -22,10 +23,13 @@ st.set_page_config(
 )
 
 st.title("📈 SEC Filings Intelligence Dashboard")
-st.caption("Analytics layer built from SEC filings using Python, DuckDB, dbt and Streamlit.")
+st.caption(
+    "End-to-end Data Engineering pipeline powered by Python, DuckDB, dbt, Airflow and Streamlit."
+)
 
 try:
     kpis = load_kpis()
+    pipeline_metrics_df = load_pipeline_metrics()
     forms_df = load_filings_by_form()
     top_companies_df = load_top_companies()
     recent_filings_df = load_recent_filings(10)
@@ -53,6 +57,33 @@ selected_cik = companies_df.loc[
     companies_df["company_name"] == selected_company_name,
     "cik",
 ].iloc[0]
+
+st.header("⚙️ Pipeline Health")
+
+if not pipeline_metrics_df.empty:
+
+    latest_metrics = pipeline_metrics_df.iloc[0]
+
+    p1, p2, p3 = st.columns(3)
+
+    p1.metric(
+        "Companies Processed",
+        f"{latest_metrics['total_companies']:,}"
+    )
+
+    p2.metric(
+        "Filings Processed",
+        f"{latest_metrics['total_filings']:,}"
+    )
+
+    p3.metric(
+        "Active Companies",
+        f"{latest_metrics['companies_with_activity']:,}"
+    )
+
+    st.caption(
+        f"Last Pipeline Execution: {latest_metrics['execution_timestamp']}"
+    )
 
 st.divider()
 
