@@ -135,3 +135,15 @@ models:
 
   - name: gold_sic_summary
     description: "Aggregated metrics by SIC industry."
+
+  - name: gold_company_activity
+    description: Company filing activity summary.
+
+  - name: gold_form_distribution
+    description: Distribution of SEC forms.
+
+  - name: gold_filing_trends
+    description: Monthly filing trend.
+
+  - name: gold_recent_filings
+    description: Most recent SEC filings.
