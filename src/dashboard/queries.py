@@ -21,8 +21,8 @@ def load_kpis() -> dict[str, object]:
     query = """
     SELECT
         (SELECT COUNT(*) FROM analytics.gold_companies_latest) AS total_companies,
-        (SELECT COUNT(*) FROM analytics.gold_filings_summary) AS total_companies_with_filings,
-        (SELECT SUM(total_filings) FROM analytics.gold_filings_summary) AS total_filings,
+        (SELECT COUNT(*) FROM analytics.gold_filings_summary) AS companies_with_filings,
+        (SELECT COALESCE(SUM(total_filings), 0) FROM analytics.gold_filings_summary) AS total_filings,
         (SELECT MAX(latest_filing_date) FROM analytics.gold_filings_summary) AS latest_filing_date
     """
     with _get_connection() as con:
@@ -30,7 +30,7 @@ def load_kpis() -> dict[str, object]:
 
     return {
         "total_companies": row[0],
-        "total_companies_with_filings": row[1],
+        "companies_with_filings": row[1],
         "total_filings": row[2],
         "latest_filing_date": row[3],
     }
@@ -40,10 +40,9 @@ def load_filings_by_form() -> pd.DataFrame:
     query = """
     SELECT
         form,
-        COUNT(*) AS filings_count
-    FROM analytics.stg_filings
-    GROUP BY form
-    ORDER BY filings_count DESC, form
+        total_filings
+    FROM analytics.gold_form_distribution
+    ORDER BY total_filings DESC, form
     """
     with _get_connection() as con:
         return con.execute(query).df()
@@ -55,13 +54,13 @@ def load_top_companies() -> pd.DataFrame:
         c.company_name,
         c.ticker,
         c.exchange,
-        f.total_filings,
-        f.first_filing_date,
-        f.latest_filing_date
-    FROM analytics.gold_filings_summary f
+        a.total_filings,
+        a.first_filing_date,
+        a.last_filing_date
+    FROM analytics.gold_company_activity a
     JOIN analytics.gold_companies_latest c
-        ON c.cik = f.cik
-    ORDER BY f.total_filings DESC, c.company_name
+        ON c.cik = a.cik
+    ORDER BY a.total_filings DESC, c.company_name
     """
     with _get_connection() as con:
         return con.execute(query).df()
@@ -76,59 +75,73 @@ def load_recent_filings(limit: int = 10) -> pd.DataFrame:
         report_date,
         form,
         primary_document
-    FROM analytics.stg_filings
+    FROM analytics.gold_recent_filings
     ORDER BY filing_date DESC NULLS LAST, accession_number DESC
     LIMIT {int(limit)}
     """
     with _get_connection() as con:
         return con.execute(query).df()
-    
-def load_filings_timeline():
+
+
+def load_filings_timeline() -> pd.DataFrame:
     query = """
     SELECT
-        filing_date,
-        COUNT(*) AS filings
-    FROM analytics.stg_filings
-    WHERE filing_date IS NOT NULL
-    GROUP BY filing_date
-    ORDER BY filing_date
+        filing_month,
+        total_filings
+    FROM analytics.gold_filing_trends
+    ORDER BY filing_month
     """
-
     with _get_connection() as con:
         return con.execute(query).df()
-    
-def load_companies():
+
+
+def load_companies() -> pd.DataFrame:
     query = """
     SELECT
-        company_name,
-        cik
+        cik,
+        company_name
     FROM analytics.gold_companies_latest
     ORDER BY company_name
     """
-
     with _get_connection() as con:
         return con.execute(query).df()
-    
-def load_company_detail(cik: str):
-    query = f"""
+
+
+def load_company_detail(cik: str) -> pd.DataFrame:
+    query = """
     SELECT *
     FROM analytics.gold_companies_latest
-    WHERE cik = '{cik}'
+    WHERE cik = ?
     """
-
     with _get_connection() as con:
-        return con.execute(query).df()
-    
-def load_company_filings(cik: str):
-    query = f"""
-    SELECT
-        filing_date,
-        form,
-        accession_number
-    FROM analytics.stg_filings
-    WHERE cik = '{cik}'
-    ORDER BY filing_date DESC
-    """
+        return con.execute(query, [cik]).df()
 
+
+def load_company_filings(cik: str) -> pd.DataFrame:
+    query = """
+    SELECT
+        accession_number,
+        filing_date,
+        report_date,
+        form,
+        primary_document
+    FROM analytics.gold_company_filings
+    WHERE cik = ?
+    ORDER BY filing_date DESC NULLS LAST, accession_number DESC
+    """
+    with _get_connection() as con:
+        return con.execute(query, [cik]).df()
+
+
+def load_sic_summary() -> pd.DataFrame:
+    query = """
+    SELECT
+        sic,
+        sic_description,
+        total_companies,
+        total_filings
+    FROM analytics.gold_sic_summary
+    ORDER BY total_filings DESC, total_companies DESC, sic
+    """
     with _get_connection() as con:
         return con.execute(query).df()
