@@ -13,6 +13,9 @@ models:
         data_tests:
           - unique
           - not_null
+          - dbt_expectations.expect_column_values_to_match_regex:
+              arguments:
+                regex: "^[0-9]+$"
 
       - name: company_name
         description: "Company legal name as provided by the SEC."
@@ -67,11 +70,15 @@ models:
         data_tests:
           - unique
           - not_null
+          - dbt_expectations.expect_column_values_to_match_regex:
+              arguments:
+                regex: "^[0-9-]+$"
 
       - name: filing_date
         description: "Date when the filing was submitted."
         data_tests:
           - not_null
+
 
       - name: report_date
         description: "Date the filing refers to, when available."
