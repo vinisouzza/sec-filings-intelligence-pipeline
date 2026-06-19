@@ -12,6 +12,8 @@ target
 dbt_packages
 
 logs
+**/logs
+**/logs/*
 
 data/raw
 data/bronze
