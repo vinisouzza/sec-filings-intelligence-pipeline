@@ -154,3 +154,29 @@ models:
 
   - name: gold_recent_filings
     description: Most recent SEC filings.
+
+  - name: gold_pipeline_execution_history
+    description: Historical execution metrics
+
+    columns:
+
+      - name: execution_timestamp
+        tests:
+          - not_null
+
+      - name: total_filings
+        tests:
+          - not_null
+
+  - name: gold_data_quality
+    description: Data quality metrics
+
+    columns:
+
+      - name: quality_score
+        tests:
+          - not_null
+
+      - name: total_filings
+        tests:
+          - not_null

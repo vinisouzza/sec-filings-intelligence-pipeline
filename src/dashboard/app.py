@@ -14,6 +14,8 @@ from dashboard.queries import (
     load_recent_filings,
     load_sic_summary,
     load_top_companies,
+    load_execution_history,
+    load_data_quality,
 )
 
 st.set_page_config(
@@ -36,6 +38,8 @@ try:
     timeline_df = load_filings_timeline()
     companies_df = load_companies()
     sic_df = load_sic_summary()
+    execution_history_df = load_execution_history()
+    data_quality_df = load_data_quality()
 except FileNotFoundError as exc:
     st.error(str(exc))
     st.stop()
@@ -83,6 +87,68 @@ if not pipeline_metrics_df.empty:
 
     st.caption(
         f"Last Pipeline Execution: {latest_metrics['execution_timestamp']}"
+    )
+
+st.subheader("Execution History")
+
+if not execution_history_df.empty:
+
+    fig_pipeline = px.line(
+        execution_history_df,
+        x="execution_timestamp",
+        y="total_filings",
+        markers=True,
+        title="Pipeline Growth Over Time"
+    )
+
+    st.plotly_chart(
+        fig_pipeline,
+        use_container_width=True
+    )
+
+if len(execution_history_df) >= 2:
+
+    current = execution_history_df.iloc[-1]
+    previous = execution_history_df.iloc[-2]
+
+    growth = (
+        current["total_filings"]
+        - previous["total_filings"]
+    )
+
+    st.metric(
+        "New Filings Since Last Run",
+        growth
+    )
+
+
+st.divider()
+
+st.header("Data Quality")
+if not data_quality_df.empty:
+
+    dq = data_quality_df.iloc[0]
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric(
+        "Quality Score",
+        f"{dq['quality_score']}%"
+    )
+
+    c2.metric(
+        "Null CIK",
+        int(dq["null_cik"])
+    )
+
+    c3.metric(
+        "Null Forms",
+        int(dq["null_form"])
+    )
+
+    c4.metric(
+        "Duplicate Filings",
+        int(dq["duplicate_filings"])
     )
 
 st.divider()

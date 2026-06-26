@@ -146,11 +146,37 @@ def load_sic_summary() -> pd.DataFrame:
     with _get_connection() as con:
         return con.execute(query).df()
     
+
 def load_pipeline_metrics() -> pd.DataFrame:
     query = """
     SELECT *
     FROM analytics.gold_pipeline_metrics
     ORDER BY execution_timestamp DESC
+    """
+
+    with _get_connection() as con:
+        return con.execute(query).df()
+    
+
+def load_execution_history() -> pd.DataFrame:
+    query = """
+    SELECT
+        execution_timestamp,
+        total_companies,
+        total_filings,
+        active_companies
+    FROM analytics.gold_pipeline_execution_history
+    ORDER BY execution_timestamp
+    """
+
+    with _get_connection() as con:
+        return con.execute(query).df()
+    
+    
+def load_data_quality() -> pd.DataFrame:
+    query = """
+    SELECT *
+    FROM analytics.gold_data_quality
     """
 
     with _get_connection() as con:
