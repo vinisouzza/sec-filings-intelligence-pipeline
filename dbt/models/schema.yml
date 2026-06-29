@@ -117,66 +117,274 @@ models:
         description: "Source Silver file that generated this staged row."
         data_tests:
           - not_null
-  
+
   - name: gold_companies_latest
-    description: "Latest company dimension."
+    description: >
+      Company dimension. One row per CIK with the latest known attributes
+      (name, ticker, exchange, SIC, incorporation state, SEC filer category).
+      Grain: one row per cik. Primary consumer: dashboard company selector
+      and company detail panel.
 
     columns:
       - name: cik
+        description: "SEC Central Index Key. Primary key of this dimension."
         data_tests:
           - unique
           - not_null
 
+      - name: company_name
+        description: "Company legal name."
+
+      - name: ticker
+        description: "Primary ticker symbol, when available."
+
+      - name: exchange
+        description: "Primary listing exchange, when available."
+
+      - name: sic
+        description: "Standard Industrial Classification code."
+
+      - name: sic_description
+        description: "Human-readable SIC description."
+
+      - name: state_of_incorporation
+        description: "State of incorporation."
+
+      - name: category
+        description: "SEC filer category (e.g. Large Accelerated Filer)."
+
+      - name: latest_ingestion_date
+        description: "Most recent ingestion date reflected in this snapshot."
+
   - name: gold_filings_summary
-    description: "Aggregated filing metrics per company."
+    description: >
+      Aggregated filing metrics per company: total filings, first/last filing
+      date and breakdown by the most common form types (10-K, 10-Q, 8-K).
+      Grain: one row per cik. Consumed by the dashboard KPI cards.
 
     columns:
       - name: cik
+        description: "SEC Central Index Key. One row per company."
         data_tests:
           - unique
           - not_null
 
       - name: total_filings
+        description: "Total number of filings submitted by the company."
         data_tests:
           - not_null
 
+      - name: first_filing_date
+        description: "Date of the company's earliest known filing."
+
+      - name: latest_filing_date
+        description: "Date of the company's most recent known filing."
+
+      - name: total_10k
+        description: "Total number of 10-K (annual report) filings."
+
+      - name: total_10q
+        description: "Total number of 10-Q (quarterly report) filings."
+
+      - name: total_8k
+        description: "Total number of 8-K (current report) filings."
+
   - name: gold_sic_summary
-    description: "Aggregated metrics by SIC industry."
+    description: >
+      Aggregated metrics by SIC industry segment: number of distinct companies
+      and total filings per SIC code. Grain: one row per (sic, sic_description).
+      Powers the "Top SIC Segments" chart on the dashboard.
+
+    columns:
+      - name: sic
+        description: "Standard Industrial Classification code."
+
+      - name: sic_description
+        description: "Human-readable SIC description."
+
+      - name: total_companies
+        description: "Distinct number of companies classified under this SIC."
+
+      - name: total_filings
+        description: "Total filings submitted by companies under this SIC."
 
   - name: gold_company_activity
-    description: Company filing activity summary.
+    description: >
+      Company-level filing activity summary: total filings and the first/last
+      filing date per company, including companies with zero filings (left join).
+      Grain: one row per cik. Powers the "Companies With Most Filings" chart.
+
+    columns:
+      - name: cik
+        description: "SEC Central Index Key."
+
+      - name: company_name
+        description: "Company legal name."
+
+      - name: sic
+        description: "Standard Industrial Classification code."
+
+      - name: total_filings
+        description: "Total number of filings associated with the company."
+
+      - name: first_filing_date
+        description: "Date of the company's earliest filing."
+
+      - name: last_filing_date
+        description: "Date of the company's most recent filing."
 
   - name: gold_form_distribution
-    description: Distribution of SEC forms.
+    description: >
+      Distribution of SEC filings by form type across all companies.
+      Grain: one row per form. Powers the "Top Filing Forms" chart.
+
+    columns:
+      - name: form
+        description: "SEC filing form type (10-K, 10-Q, 8-K, DEF 14A, etc.)."
+
+      - name: total_filings
+        description: "Total number of filings submitted under this form type."
 
   - name: gold_filing_trends
-    description: Monthly filing trend.
+    description: >
+      Monthly count of filings across all companies, used to track filing
+      volume over time. Grain: one row per calendar month. Powers the
+      "Filings Over Time" trend chart.
+
+    columns:
+      - name: filing_month
+        description: "First day of the calendar month the filings belong to."
+
+      - name: total_filings
+        description: "Total number of filings submitted during the month."
 
   - name: gold_recent_filings
-    description: Most recent SEC filings.
+    description: >
+      Most recent 100 SEC filings across all companies, ordered by filing
+      date. Incremental model keyed on accession_number. Powers the "Recent
+      Filings" table on the dashboard.
+
+    columns:
+      - name: accession_number
+        description: "SEC accession number. Unique identifier of the filing."
+
+      - name: cik
+        description: "SEC Central Index Key of the filer."
+
+      - name: filing_date
+        description: "Date when the filing was submitted."
+
+      - name: report_date
+        description: "Date the filing refers to, when available."
+
+      - name: form
+        description: "SEC filing form type."
+
+      - name: primary_document
+        description: "Primary filing document filename."
+
+  - name: gold_company_filings
+    description: >
+      Filing-level detail per company, incrementally loaded. Grain: one row
+      per accession_number. Powers the "Company Filing History" table in the
+      Company Explorer section of the dashboard.
+
+    columns:
+      - name: accession_number
+        description: "SEC accession number. Unique identifier of the filing."
+
+      - name: cik
+        description: "SEC Central Index Key of the filer."
+
+      - name: filing_date
+        description: "Date when the filing was submitted."
+
+      - name: report_date
+        description: "Date the filing refers to, when available."
+
+      - name: form
+        description: "SEC filing form type."
+
+      - name: primary_document
+        description: "Primary filing document filename."
 
   - name: gold_pipeline_execution_history
-    description: Historical execution metrics
+    description: >
+      Historical snapshot of pipeline volume metrics, appended incrementally
+      on every dbt run. Grain: one row per execution_timestamp. Powers the
+      "Pipeline Growth Over Time" chart in the dashboard's Pipeline Health
+      section.
 
     columns:
 
       - name: execution_timestamp
+        description: "Timestamp of the dbt run that produced this snapshot."
         tests:
           - not_null
+
+      - name: total_companies
+        description: "Distinct number of companies known at execution time."
 
       - name: total_filings
+        description: "Total number of filings known at execution time."
         tests:
           - not_null
 
-  - name: gold_data_quality
-    description: Data quality metrics
+      - name: active_companies
+        description: "Companies with at least one filing in the last 30 days."
+
+  - name: gold_pipeline_metrics
+    description: >
+      Latest pipeline run snapshot: total companies, total filings and
+      companies with filing activity. Grain: single row, refreshed on every
+      dbt run. Powers the Pipeline Health metric cards in the dashboard.
 
     columns:
 
-      - name: quality_score
+      - name: execution_timestamp
+        description: "Timestamp when this snapshot was generated."
+
+      - name: total_companies
+        description: "Total number of companies in the Gold company dimension."
+
+      - name: total_filings
+        description: "Total number of filings in the Gold filings staging layer."
+
+      - name: companies_with_activity
+        description: "Number of companies with at least one recorded filing."
+
+  - name: gold_data_quality
+    description: >
+      Data quality scorecard for the filings staging layer: null counts for
+      key fields, duplicate filings and an overall quality score. Grain:
+      single row, refreshed on every dbt run. Powers the Data Quality section
+      in the dashboard.
+
+    columns:
+
+      - name: execution_timestamp
+        description: "Timestamp when this quality check was generated."
+
+      - name: total_filings
+        description: "Total number of filings evaluated."
         tests:
           - not_null
 
-      - name: total_filings
+      - name: null_cik
+        description: "Number of filings missing a CIK."
+
+      - name: null_form
+        description: "Number of filings missing a form type."
+
+      - name: null_filing_date
+        description: "Number of filings missing a filing date."
+
+      - name: duplicate_filings
+        description: "Difference between total filings and distinct accession numbers."
+
+      - name: quality_score
+        description: >
+          Percentage of filings with no null cik, form or filing_date,
+          relative to total filings.
         tests:
           - not_null
