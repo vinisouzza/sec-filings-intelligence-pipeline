@@ -4,6 +4,7 @@ from pathlib import Path
 
 import duckdb
 import pandas as pd
+import streamlit as st
 
 DB_PATH = Path("data/warehouse/sec_filings.duckdb")
 
@@ -17,6 +18,7 @@ def _get_connection() -> duckdb.DuckDBPyConnection:
     return duckdb.connect(str(DB_PATH), read_only=True)
 
 
+@st.cache_data(ttl=300)
 def load_kpis() -> dict[str, object]:
     query = """
     SELECT
@@ -36,6 +38,7 @@ def load_kpis() -> dict[str, object]:
     }
 
 
+@st.cache_data(ttl=300)
 def load_filings_by_form() -> pd.DataFrame:
     query = """
     SELECT
@@ -48,6 +51,7 @@ def load_filings_by_form() -> pd.DataFrame:
         return con.execute(query).df()
 
 
+@st.cache_data(ttl=300)
 def load_top_companies() -> pd.DataFrame:
     query = """
     SELECT
@@ -66,6 +70,7 @@ def load_top_companies() -> pd.DataFrame:
         return con.execute(query).df()
 
 
+@st.cache_data(ttl=300)
 def load_recent_filings(limit: int = 10) -> pd.DataFrame:
     query = f"""
     SELECT
@@ -83,6 +88,7 @@ def load_recent_filings(limit: int = 10) -> pd.DataFrame:
         return con.execute(query).df()
 
 
+@st.cache_data(ttl=300)
 def load_filings_timeline() -> pd.DataFrame:
     query = """
     SELECT
@@ -95,6 +101,7 @@ def load_filings_timeline() -> pd.DataFrame:
         return con.execute(query).df()
 
 
+@st.cache_data(ttl=300)
 def load_companies() -> pd.DataFrame:
     query = """
     SELECT
@@ -107,6 +114,7 @@ def load_companies() -> pd.DataFrame:
         return con.execute(query).df()
 
 
+@st.cache_data(ttl=300)
 def load_company_detail(cik: str) -> pd.DataFrame:
     query = """
     SELECT *
@@ -117,6 +125,7 @@ def load_company_detail(cik: str) -> pd.DataFrame:
         return con.execute(query, [cik]).df()
 
 
+@st.cache_data(ttl=300)
 def load_company_filings(cik: str) -> pd.DataFrame:
     query = """
     SELECT
@@ -133,6 +142,7 @@ def load_company_filings(cik: str) -> pd.DataFrame:
         return con.execute(query, [cik]).df()
 
 
+@st.cache_data(ttl=300)
 def load_sic_summary() -> pd.DataFrame:
     query = """
     SELECT
@@ -147,6 +157,7 @@ def load_sic_summary() -> pd.DataFrame:
         return con.execute(query).df()
     
 
+@st.cache_data(ttl=300)
 def load_pipeline_metrics() -> pd.DataFrame:
     query = """
     SELECT *
@@ -158,6 +169,7 @@ def load_pipeline_metrics() -> pd.DataFrame:
         return con.execute(query).df()
     
 
+@st.cache_data(ttl=300)
 def load_execution_history() -> pd.DataFrame:
     query = """
     SELECT
@@ -173,6 +185,7 @@ def load_execution_history() -> pd.DataFrame:
         return con.execute(query).df()
     
     
+@st.cache_data(ttl=300)
 def load_data_quality() -> pd.DataFrame:
     query = """
     SELECT *
