@@ -233,46 +233,134 @@ dbt test --project-dir dbt --profiles-dir dbt
 
 ## Execução
 
-### 1. Instalar dependências
+### 1. Clonar o repositório
+
+```bash
+git clone https://github.com/vinisouzza/sec-filings-intelligence-pipeline.git
+cd sec-filings-intelligence-pipeline
+```
+
+### 2. Criar ambiente virtual
+
+```bash
+python -m venv .venv
+```
+
+Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+Linux/macOS
+
+```bash
+source .venv/bin/activate
+```
+
+### 3. Instalar dependências
 
 ```bash
 pip install -r requirements.txt
 pip install -e .
 ```
 
-### 2. Configurar a watchlist
+### 4. Configurar as variáveis de ambiente
 
-Crie o arquivo local `data/watchlist.txt` com base em `watchlist.example.txt`. Cada linha deve conter um CIK válido da SEC.
+Crie um arquivo `.env` na raiz do projeto contendo:
 
-### 3. Executar a ingestão
+```text
+SEC_USER_AGENT=Seu Nome seu@email.com
+```
+
+A SEC exige um *User-Agent* identificando a aplicação.
+
+### 5. Configurar a watchlist
+
+Crie o arquivo local `data/watchlist.txt` a partir de `watchlist.example.txt`.
+
+Cada linha deve conter um CIK válido da SEC.
+
+Exemplo:
+
+```text
+320193
+789019
+1018724
+```
+
+### 6. Executar a ingestão
 
 ```bash
 python -m main
 ```
 
-### 4. Construir Bronze
+### 7. Construir a camada Bronze
 
 ```bash
 python -m bronze.build_bronze
 ```
 
-### 5. Construir Silver
+### 8. Construir a camada Silver
 
 ```bash
 python -m silver.build_silver
 ```
 
-### 6. Executar os modelos dbt
+### 9. Instalar os pacotes do dbt
+
+```bash
+dbt deps --project-dir dbt --profiles-dir dbt
+```
+
+### 10. Executar os modelos dbt
 
 ```bash
 dbt run --project-dir dbt --profiles-dir dbt
 ```
 
-### 7. Rodar o dashboard
+### 11. Executar os testes dbt
+
+```bash
+dbt test --project-dir dbt --profiles-dir dbt
+```
+
+### 12. Iniciar o dashboard
 
 ```bash
 streamlit run src/dashboard/app.py
 ```
+
+---
+
+## Executando o pipeline completo com Airflow
+
+Inicialize os containers:
+
+```bash
+docker compose up airflow-init
+docker compose up -d
+```
+
+A interface estará disponível em:
+
+```
+http://localhost:8080
+```
+
+Usuário:
+
+```
+admin
+```
+
+Senha:
+
+```
+admin
+```
+
+Após iniciar os serviços, execute a DAG `sec_filings_pipeline` pela interface do Airflow.
 
 ---
 
@@ -303,14 +391,6 @@ O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em todo p
 3. Instala os pacotes dbt (`dbt deps`).
 4. Valida o projeto dbt (`dbt parse`).
 
----
-
-## Roadmap
-
-* Catálogo de dados navegável (`dbt docs`) e documentação por camada.
-* Página "About" no dashboard com diagrama de arquitetura.
-* Execution log instrumentado em Python (duração por etapa, linhas processadas por camada).
-* Evolução para um ambiente mais próximo de produção: Data Lake em S3/MinIO, troca de warehouse (Postgres/ClickHouse/BigQuery), monitoramento com Prometheus/Grafana, IaC com Terraform e publicação automatizada de imagens Docker.
 
 ---
 
