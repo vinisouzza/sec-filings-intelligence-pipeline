@@ -45,6 +45,7 @@ with DAG(
         bash_command="""
         cd /opt/project &&
         rm -rf dbt/target dbt/dbt_packages &&
+        dbt deps --project-dir dbt --profiles-dir dbt &&
         dbt run --project-dir dbt --profiles-dir dbt --no-partial-parse
         """
     )
@@ -53,7 +54,6 @@ with DAG(
         task_id="dbt_test",
         bash_command="""
         cd /opt/project &&
-        rm -rf dbt/target dbt/dbt_packages &&
         dbt test --project-dir dbt --profiles-dir dbt --no-partial-parse
         """
     )
